@@ -34,11 +34,11 @@
 <form hx-swap="outerHTML" hx-post="/contacts">
     Name: <input {{ if .Values.name }} value="{{ .Values.name }}" {{ end }} type="text" name="name" /><br>
     {{ if .Errors.name }}
-        <span class="error" style="color: red;">{{ .Errors.name }}</span>
+    <span class="error" style="color: red;">{{ .Errors.name }}</span>
     {{ end }}
     Email: <input {{ if .Values.email }} value="{{ .Values.email }}" {{ end }} type="text" name="email" /><br>
     {{ if .Errors.email }}
-        <span class="error" style="color: red;">{{ .Errors.email }}</span>
+    <span class="error" style="color: red;">{{ .Errors.email }}</span>
     {{ end }}
     <input type="submit" value="Create contact" />
 </form>
@@ -47,15 +47,22 @@
 {{ block "display" . }}
 <div id="contacts" style="display: flex; flex-direction: column;">
     {{ range .Contacts }}
-        {{ template "contact" . }}
+    {{ template "contact" . }}
     {{ end }}
 </div>
 {{ end }}
 
 {{ block "contact" . }}
-<div>
-    Name: <span>{{ .Name }}</span>
-    Email: <span>{{ .Email }}</span>
+<div class="contact" id="contact-{{ .Id }}" style="display: flex">
+    <div hx-target="#contact-{{ .Id }}" hx-swap="outerHTML" hx-delete="/contacts/{{ .Id }}" hx-indicator="#ci-{{ .Id }}"
+        style="width: 1rem; margin-right: 5px; cursor: pointer;">
+        <img alt="delete" style="width: 1.25rem;" src="https://img.icons8.com/?size=256&id=67884&format=png" />
+    </div>
+    <div>
+        Name: <span>{{ .Name }}</span>
+        Email: <span>{{ .Email }}</span>
+        <img id="ci-{{ .Id }}" class="htmx-indicator" src="/images/bars.svg" style="width: 1.25rem;" />
+    </div>
 </div>
 {{ end }}
 

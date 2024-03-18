@@ -1,14 +1,18 @@
 package main
 
 import (
-	"github.com/labstack/gommon/log"
 	"html/template"
 	"io"
 	"net/http"
+	"strconv"
+
+	"github.com/labstack/gommon/log"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+var id = 0
 
 type Templates struct {
 	templates *template.Template
@@ -25,12 +29,15 @@ func NewTemplates() *Templates {
 }
 
 type Contact struct {
+	Id    int
 	Name  string
 	Email string
 }
 
 func NewContact(name, email string) Contact {
+	id++
 	return Contact{
+		Id:    id,
 		Name:  name,
 		Email: email,
 	}
@@ -40,6 +47,15 @@ type Contacts = []Contact
 
 type Data struct {
 	Contacts Contacts
+}
+
+func (d *Data) IndexOf(id int) int {
+	for i, c := range d.Contacts {
+		if c.Id == id {
+			return i
+		}
+	}
+	return -1
 }
 
 func (d *Data) HasEmail(email string) bool {
@@ -88,6 +104,9 @@ func main() {
 	e := echo.New()
 	e.Renderer = NewTemplates()
 	e.Use(middleware.Logger())
+	e.Static("/images", "images")
+	e.Static("/css", "css")
+
 	page := NewPage()
 
 	e.GET("/", func(c echo.Context) error {
@@ -116,6 +135,22 @@ func main() {
 			log.Error(err)
 		}
 		return c.Render(http.StatusOK, "oob-contact", newContact)
+	})
+
+	e.DELETE("/contacts/:id", func(c echo.Context) error {
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "Invalid ID")
+		}
+
+		index := page.Data.IndexOf(id)
+		if index == -1 {
+			return c.String(http.StatusNotFound, "Contact not found")
+		}
+
+		page.Data.Contacts = append(page.Data.Contacts[:index], page.Data.Contacts[index+1:]...)
+		return c.NoContent(http.StatusOK)
 	})
 
 	e.Logger.Fatal(e.Start(":7777"))
