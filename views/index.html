@@ -1,33 +1,66 @@
 {{ block "index" . }}
 <html lang="en">
-    <head>
-        <title>Index</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="/css/index.css">
-    </head>
-    <body>
-      {{ template "form" . }}
-      {{ template "display" . }}
-    </body>
+
+<head>
+    <title>Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/htmx.org@1.9.11"
+        integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+
+<body>
+    {{ template "form" .Form }}
+    <hr>
+    {{ template "display" .Data }}
+</body>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+        document.body.addEventListener("htmx:beforeSwap", function (event) {
+            if (event.detail.xhr.status === 422) {
+                event.detail.shouldSwap = true
+                event.detail.isError = false
+            }
+        })
+    })
+</script>
+
 </html>
 {{ end }}
 
 {{ block "form" . }}
-<form hx-post="/contacts" hx-target="#contacts">
-    Name: <input type="text" name="name" />
-    Email: <input type="text" name="email" />
+<form hx-swap="outerHTML" hx-post="/contacts">
+    Name: <input {{ if .Values.name }} value="{{ .Values.name }}" {{ end }} type="text" name="name" /><br>
+    {{ if .Errors.name }}
+        <span class="error" style="color: red;">{{ .Errors.name }}</span>
+    {{ end }}
+    Email: <input {{ if .Values.email }} value="{{ .Values.email }}" {{ end }} type="text" name="email" /><br>
+    {{ if .Errors.email }}
+        <span class="error" style="color: red;">{{ .Errors.email }}</span>
+    {{ end }}
     <input type="submit" value="Create contact" />
 </form>
 {{ end }}
 
 {{ block "display" . }}
-    <div id="contacts" style="display: flex; flex-direction: column;">
-        {{ range .Contacts }}
-            <div>
-                Name: <span>{{ .Name }}</span>
-                Email: <span>{{ .Email }}</span>
-            </div>
-        {{ end }}
-    </div>
+<div id="contacts" style="display: flex; flex-direction: column;">
+    {{ range .Contacts }}
+        {{ template "contact" . }}
+    {{ end }}
+</div>
+{{ end }}
+
+{{ block "contact" . }}
+<div>
+    Name: <span>{{ .Name }}</span>
+    Email: <span>{{ .Email }}</span>
+</div>
+{{ end }}
+
+{{ block "oob-contact" . }}
+<div id="contacts" hx-swap-oob="afterbegin">
+    {{ template "contact" . }}
+</div>
 {{ end }}
